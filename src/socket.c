@@ -1,50 +1,65 @@
 #include "leping.h"
 
-int create_raw_socket() {
-    int sockfd;
+int create_raw_socket(int family) {
+    int protocol;
 
-    sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+    if (family == AF_INET6)
+        protocol = IPPROTO_ICMPV6;
+    else
+        protocol = IPPROTO_ICMP;
+
+    int sockfd = socket(family, SOCK_RAW, protocol);
+
     if (sockfd < 0) {
         perror("socket");
-        exit(1);
+        return -1;
     }
 
     return sockfd;
 }
 
-int resolve_host(const char *host, struct sockaddr_in *addr) {
-    struct hostent *he;
+int resolve_host(const char *host, struct sockaddr_storage *addr, socklen_t *addr_len) {
+    struct addrinfo hints;
+    struct addrinfo *result;
 
-    he = gethostbyname(host);
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_RAW;
 
-    if (!he)
-    {
-        fprintf(stderr, "Cannot resolve %s\n", host);
-        exit(1);
+    int status = getaddrinfo(host, NULL, &hints, &result);
+
+    if (status != 0) {
+        fprintf(stderr, "Cannot resolve %s: %s\n",
+            host,
+            gai_strerror(status)
+        );
+
+        return -1;
     }
 
-    memset(addr, 0, sizeof(*addr));
-    addr->sin_family = AF_INET;
-    memcpy(&addr->sin_addr, he->h_addr, he->h_length);
+    memcpy(addr, result->ai_addr, result->ai_addrlen);
+    *addr_len = result->ai_addrlen;
+
+    freeaddrinfo(result);
 
     return 0;
 }
 
-const char *reverse_dns(struct sockaddr_in *addr) {
+const char *reverse_dns(struct sockaddr *addr, socklen_t addr_len) {
     static char host[NI_MAXHOST];
 
     int status = getnameinfo(
-        (struct sockaddr *)addr,
-        sizeof(*addr),
+        addr,
+        addr_len,
         host,
         sizeof(host),
         NULL,
         0,
-        0
+        NI_NAMEREQD
     );
 
     if (status != 0)
-        return inet_ntoa(addr->sin_addr);
+        return "unknown";
 
     return host;
 }

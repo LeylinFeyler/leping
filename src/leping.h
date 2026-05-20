@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/ip.h>
+#include <netinet/icmp6.h>
 #include <sys/time.h>
 #include <netdb.h>
 
@@ -34,14 +35,14 @@ typedef struct {
 
 extern ping_stats stats;
 
-int create_raw_socket();
-int resolve_host(const char *host, struct sockaddr_in *addr);
-const char *reverse_dns(struct sockaddr_in *addr);
+int create_raw_socket(int family);
+int resolve_host(const char *host, struct sockaddr_storage *addr, socklen_t *addr_len);
+const char *reverse_dns(struct sockaddr *addr, socklen_t addr_len);
 
 uint16_t icmp_checksum(void *buf, int len);
 void build_icmp_packet(struct icmp *pkt, int seq, int packet_size);
 
-int send_ping(int sockfd, struct sockaddr_in *addr, int seq, int packet_size, struct timeval *send_time);
+int send_ping(int sockfd, struct sockaddr *addr, socklen_t addr_len, int seq, int packet_size, struct timeval *send_time);
 int receive_ping(int sockfd, int seq, int timeout, struct timeval *send_time);
 
 double time_diff(struct timeval start, struct timeval end);

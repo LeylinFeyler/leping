@@ -35,8 +35,11 @@ void build_icmp_packet(struct icmp *pkt, int seq, int packet_size)
     pkt->icmp_cksum = icmp_checksum(pkt, sizeof(struct icmp) + packet_size);
 }
 
-int send_ping(int sockfd, struct sockaddr_in *addr, int seq, int packet_size, struct timeval *send_time)
-{
+int send_ping(int sockfd, struct sockaddr *addr,
+    socklen_t addr_len,
+    int seq,
+    int packet_size,
+    struct timeval *send_time) {
     int total_size = sizeof(struct icmp) + packet_size;
 
     char packet[1500];
@@ -53,8 +56,8 @@ int send_ping(int sockfd, struct sockaddr_in *addr, int seq, int packet_size, st
         packet,
         total_size,
         0,
-        (struct sockaddr*)addr,
-        sizeof(*addr)
+        addr,
+        addr_len
     );
 
     if (sent <= 0) {
@@ -140,9 +143,22 @@ int receive_ping(int sockfd, int seq, int timeout, struct timeval *send_time) {
         stats.rtt_sum += rtt;
         stats.rtt_sum_sq += rtt * rtt;
 
+        char ip[INET6_ADDRSTRLEN];
+        void *raw_addr;
+
+        if (addr.sin_family == AF_INET) {
+            struct sockaddr_in *ipv4 = (struct sockaddr_in*)&addr;
+            raw_addr = &ipv4->sin_addr;
+        } else {
+            struct sockaddr_in6 *ipv6 = (struct sockaddr_in6*)&addr;
+            raw_addr = &ipv6->sin6_addr;
+        }
+
+        inet_ntop(addr.sin_family, raw_addr, ip, sizeof(ip));
+
         printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%.2f ms\n",
             n - ip_header_len,
-            reverse_dns(&addr),
+            reverse_dns((struct sockaddr*)&addr, addr_len),
             inet_ntoa(addr.sin_addr),
             seq,
             ip_hdr->ip_ttl,
