@@ -15,6 +15,8 @@
 #include <sys/time.h>
 #include <netdb.h>
 
+#include "cli.h"
+
 #define PING_DATA_SIZE 56
 #define PACKET_SIZE 64
 
