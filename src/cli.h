@@ -11,14 +11,8 @@ typedef struct {
 
 } PingOptions;
 
-int parse_args(
-    int argc,
-    char **argv,
-    PingOptions *opts
-);
+int parse_args(int argc, char **argv, PingOptions *opts);
 
-void print_help(
-    const char *prog
-);
+void print_help(const char *prog);
 
 #endif

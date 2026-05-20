@@ -1,17 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "cli.h"
 
 static void init_options(PingOptions *opts) {
     memset(opts, 0, sizeof(*opts));
 
-    opts->count = -1;
-    opts->interval = 1.0;
+    opts->count       = -1;
+    opts->interval    = 1.0;
     opts->packet_size = 56;
-    opts->timeout = 1;
+    opts->timeout     = 1;
 }
 
 int parse_args(int argc, char **argv, PingOptions *opts) {
@@ -22,28 +22,28 @@ int parse_args(int argc, char **argv, PingOptions *opts) {
     while ((opt = getopt(argc, argv, "c:i:s:t:h")) != -1) {
         switch (opt) {
 
-            case 'c':
-                opts->count = atoi(optarg);
-                break;
+        case 'c':
+            opts->count = atoi(optarg);
+            break;
 
-            case 'i':
-                opts->interval = atof(optarg);
-                break;
+        case 'i':
+            opts->interval = atof(optarg);
+            break;
 
-            case 's':
-                opts->packet_size = atoi(optarg);
-                break;
+        case 's':
+            opts->packet_size = atoi(optarg);
+            break;
 
-            case 't':
-                opts->timeout = atoi(optarg);
-                break;
+        case 't':
+            opts->timeout = atoi(optarg);
+            break;
 
-            case 'h':
-                print_help(argv[0]);
-                exit(0);
+        case 'h':
+            print_help(argv[0]);
+            exit(0);
 
-            default:
-                return -1;
+        default:
+            return -1;
         }
     }
 
