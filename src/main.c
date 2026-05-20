@@ -31,7 +31,7 @@ int main(int argc, char **argv)
     resolve_host(opts.host, &addr);
     gettimeofday(&stats.start_time, NULL);
 
-    printf("PING %s (%s)\n", opts.host, inet_ntoa(addr.sin_addr));
+    printf("LEPING %s (%s)\n", opts.host, inet_ntoa(addr.sin_addr));
 
     sockfd = create_raw_socket();
 
@@ -42,12 +42,12 @@ int main(int argc, char **argv)
 
         struct timeval send_time;
 
-        send_ping(sockfd, &addr, seq, &send_time);
-        receive_ping(sockfd, seq, &send_time);
+        send_ping(sockfd, &addr, seq, opts.packet_size, &send_time);
+        receive_ping(sockfd, seq, opts.timeout, &send_time);
         seq++;
         usleep(opts.interval * 1000000);
     }
-    
+
     print_statistics(opts.host);
 
     close(sockfd);

@@ -21,39 +21,41 @@ uint16_t icmp_checksum(void *buf, int len) {
     return (uint16_t)(~sum);
 }
 
-void build_icmp_packet(struct icmp *pkt, int seq) {
-
-    // icmp echo request packet
+void build_icmp_packet(struct icmp *pkt, int seq, int packet_size)
+{
     pkt->icmp_type = ICMP_ECHO;
     pkt->icmp_code = 0;
 
-    // process id is commonly used to identify ping sessions
     pkt->icmp_id = getpid();
     pkt->icmp_seq = seq;
 
-    // payload area (not required but typical for ping)
-    memset(pkt->icmp_data, 0, PING_DATA_SIZE);
+    memset(pkt->icmp_data, 0, packet_size);
 
-    // checksum must be calculated with checksum field set to zero
     pkt->icmp_cksum = 0;
-    pkt->icmp_cksum = icmp_checksum(pkt, PACKET_SIZE);
+    pkt->icmp_cksum = icmp_checksum(pkt, sizeof(struct icmp) + packet_size);
 }
 
-int send_ping(int sockfd, struct sockaddr_in *addr, int seq, struct timeval *send_time) {
-    
-    // interpret raw buffer as icmp structure
-    char packet[PACKET_SIZE];
+int send_ping(int sockfd, struct sockaddr_in *addr, int seq, int packet_size, struct timeval *send_time)
+{
+    int total_size = sizeof(struct icmp) + packet_size;
+
+    char packet[1500];
     struct icmp *icmp_hdr = (struct icmp*)packet;
 
-    build_icmp_packet(icmp_hdr, seq);
+    build_icmp_packet(icmp_hdr, seq, packet_size);
 
-    // record send time to later compute rtt
     gettimeofday(send_time, NULL);
 
-    // count sent packages
     stats.transmitted++;
 
-    int sent = sendto(sockfd, packet, PACKET_SIZE, 0, (struct sockaddr*)addr, sizeof(*addr));
+    int sent = sendto(
+        sockfd,
+        packet,
+        total_size,
+        0,
+        (struct sockaddr*)addr,
+        sizeof(*addr)
+    );
 
     if (sent <= 0) {
         perror("sendto");
@@ -63,7 +65,27 @@ int send_ping(int sockfd, struct sockaddr_in *addr, int seq, struct timeval *sen
     return 0;
 }
 
-int receive_ping(int sockfd, int seq, struct timeval *send_time) {
+int receive_ping(int sockfd, int seq, int timeout, struct timeval *send_time) {
+    fd_set readfds;
+    FD_ZERO(&readfds);
+    FD_SET(sockfd, &readfds);
+
+    struct timeval tv;
+    tv.tv_sec = timeout;
+    tv.tv_usec = 0;
+
+    int ready = select(sockfd + 1, &readfds, NULL, NULL, &tv);
+
+    if (ready == 0) {
+        printf("Request timeout for icmp_seq %d\n", seq);
+        return -1;
+    }
+
+    if (ready < 0) {
+        perror("select");
+        return -1;
+    }
+    
     char buffer[1024];
 
     struct sockaddr_in addr;
