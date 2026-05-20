@@ -1,16 +1,19 @@
 # leping (C)
 
-A minimal `ping`-like ICMP client written in C.
+A small `ping`-like ICMP client written in C using raw sockets.
 
-* Sends ICMP echo requests to a host.
-* Shows round-trip time (RTT) for each reply.
-* Handles Ctrl+C gracefully and prints statistics.
+Features:
+
+* ICMP echo requests and replies
+* RTT measurement
+* Packet statistics
+* Configurable packet count, interval, timeout and payload size
+* Graceful Ctrl+C handling
+* IPv4 + IPv6-ready networking
 
 ---
 
 ## Build
-
-Compile the project:
 
 ```bash
 make
@@ -20,13 +23,15 @@ make
 
 ## Run
 
-You need root privileges to use raw sockets. Either run with sudo:
+Raw sockets require elevated privileges.
+
+Run with sudo:
 
 ```bash
 sudo ./leping <host>
 ```
 
-or give the binary permission to use raw sockets without sudo:
+or allow the binary to use raw sockets without sudo:
 
 ```bash
 sudo setcap cap_net_raw+ep ./leping
@@ -37,4 +42,22 @@ Example:
 
 ```bash
 ./leping google.com
+```
+
+---
+
+## Usage
+
+```bash
+./leping [options] <host>
+```
+
+Options:
+
+```text
+-c <count>      number of packets
+-i <interval>   delay between packets (seconds)
+-s <size>       packet payload size
+-t <timeout>    receive timeout (seconds)
+-h              show help
 ```
