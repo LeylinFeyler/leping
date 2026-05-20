@@ -31,7 +31,10 @@ int main(int argc, char **argv)
     resolve_host(opts.host, &addr);
     gettimeofday(&stats.start_time, NULL);
 
-    printf("LEPING %s (%s)\n", opts.host, inet_ntoa(addr.sin_addr));
+    printf("LEPING %s (%s)\n",
+        reverse_dns(&addr),
+        inet_ntoa(addr.sin_addr)
+    );
 
     sockfd = create_raw_socket();
 

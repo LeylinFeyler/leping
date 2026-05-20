@@ -78,6 +78,7 @@ int receive_ping(int sockfd, int seq, int timeout, struct timeval *send_time) {
 
     if (ready == 0) {
         printf("Request timeout for icmp_seq %d\n", seq);
+        stats.transmitted++;
         return -1;
     }
 
@@ -111,11 +112,20 @@ int receive_ping(int sockfd, int seq, int timeout, struct timeval *send_time) {
     // move pointer past ip header to reach icmp header
     struct icmp *icmp_hdr = (struct icmp*)(buffer + ip_header_len);
 
+    if (icmp_hdr->icmp_type == ICMP_DEST_UNREACH) {
+        printf("From %s icmp_seq=%d Destination Host Unreachable\n",
+            inet_ntoa(addr.sin_addr),
+            seq
+        );
+
+        return -1;
+    }
+
     // verify this is the reply to our echo request
     if (icmp_hdr->icmp_type == ICMP_ECHOREPLY &&
         icmp_hdr->icmp_id == getpid() &&
-        icmp_hdr->icmp_seq == seq)
-    {
+        icmp_hdr->icmp_seq == seq) {
+
         double rtt = time_diff(*send_time, recv_time);
 
         // count received packages
@@ -130,8 +140,9 @@ int receive_ping(int sockfd, int seq, int timeout, struct timeval *send_time) {
         stats.rtt_sum += rtt;
         stats.rtt_sum_sq += rtt * rtt;
 
-        printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.2f ms\n",
+        printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%.2f ms\n",
             n - ip_header_len,
+            reverse_dns(&addr),
             inet_ntoa(addr.sin_addr),
             seq,
             ip_hdr->ip_ttl,

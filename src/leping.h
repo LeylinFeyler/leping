@@ -36,6 +36,7 @@ extern ping_stats stats;
 
 int create_raw_socket();
 int resolve_host(const char *host, struct sockaddr_in *addr);
+const char *reverse_dns(struct sockaddr_in *addr);
 
 uint16_t icmp_checksum(void *buf, int len);
 void build_icmp_packet(struct icmp *pkt, int seq, int packet_size);

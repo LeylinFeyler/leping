@@ -29,3 +29,22 @@ int resolve_host(const char *host, struct sockaddr_in *addr) {
 
     return 0;
 }
+
+const char *reverse_dns(struct sockaddr_in *addr) {
+    static char host[NI_MAXHOST];
+
+    int status = getnameinfo(
+        (struct sockaddr *)addr,
+        sizeof(*addr),
+        host,
+        sizeof(host),
+        NULL,
+        0,
+        0
+    );
+
+    if (status != 0)
+        return inet_ntoa(addr->sin_addr);
+
+    return host;
+}
